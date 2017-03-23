@@ -386,7 +386,7 @@
                         </constraints>
                     </view>
                     <connections>
-                        <outlet property="historyLabel" destination="oRQ-jU-kic" id="f9d-M1-kMf"/>
+                        <outlet property="historyLabel" destination="WBA-Vo-Jxe" id="bG8-e9-wPC"/>
                         <outlet property="resultLabel" destination="oRQ-jU-kic" id="Wco-9C-izu"/>
                     </connections>
                 </viewController>

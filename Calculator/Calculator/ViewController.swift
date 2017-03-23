@@ -12,19 +12,24 @@ class ViewController: UIViewController {
     
     @IBOutlet weak var resultLabel: UILabel!
     @IBOutlet weak var historyLabel: UILabel!
+    var currentDisplayValueWasSetByInput = false
     
     var userIsTyping = false
     private var brain = CalculatorBrain()
     
-    var displayValue: Double {
+    var displayValue: Double? {
         get {
-            return Double(resultLabel.text!)!
+            if let _ = resultLabel.text, let resultValue = Double(resultLabel.text!) {
+                return resultValue
+            }
+            return nil
         }
         set {
-            resultLabel.text = String(newValue)
+            if newValue != nil {
+                resultLabel.text = String(newValue!)
+            }
         }
     }
-    
     
     // MARK: - Initialization
 
@@ -42,8 +47,9 @@ class ViewController: UIViewController {
     // MARK: - UIButton Actions
 
     @IBAction func touchedDigit(_ sender: UIButton) {
-        let digit = sender.currentTitle!
+        currentDisplayValueWasSetByInput = true // display value is being changed using input
         
+        let digit = sender.currentTitle!
         if digit == "AC" {
             resultLabel.text = "0"
             userIsTyping = false
@@ -51,10 +57,9 @@ class ViewController: UIViewController {
         }
         
         if userIsTyping {
-            if digit == "." && floor(displayValue) != displayValue { // checks if dot was touched and current number is already a floating point number
+            if digit == "." && displayValue != nil && floor(displayValue!) != displayValue! { // checks if dot was touched and current number is already a floating point number
                 return
             }
-            
             let currentText = resultLabel.text!
             resultLabel.text = currentText + digit
         } else {
@@ -72,15 +77,17 @@ class ViewController: UIViewController {
     
     @IBAction func performOperation(_ sender: UIButton) {
         if userIsTyping {
-            brain.setOperand(displayValue)
+            brain.setOperand(displayValue!)
             userIsTyping = false
         }
         if let symbol = sender.currentTitle {
-            brain.performOperation(symbol)
+            brain.performOperation(symbol, displayValueWasSetByInput:currentDisplayValueWasSetByInput)
         }
         if let result = brain.result {
             displayValue = result
+            currentDisplayValueWasSetByInput = false // display value has been captured by calculator brain
         }
+        historyLabel.text = brain.descriptionResult
     }
 }
 

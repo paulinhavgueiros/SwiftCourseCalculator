@@ -23,25 +23,25 @@ struct CalculatorBrain {
     
     private enum Operation {
         case constant(Double)
-        case unaryOperation((Double) -> Double)
-        case binaryOperation((Double, Double) -> Double)
+        case unaryOperation((Double) -> Double, (String) -> String)
+        case binaryOperation((Double, Double) -> Double, (String, String) -> String)
         case equals
         case clear
     }
     
     private var operations: Dictionary<String,Operation> = [
-        "±": Operation.unaryOperation({ -$0 }),
-        "x²": Operation.unaryOperation({ pow($0, 2) }),
-        "x⁻¹": Operation.unaryOperation({ pow($0, -1) }),
-        "%": Operation.unaryOperation({ $0/100 }),
-        "cos": Operation.unaryOperation(cos),
-        "√": Operation.unaryOperation(sqrt),
+        "±": Operation.unaryOperation({ -$0 }, { "±(\($0))" }),
+        "x²": Operation.unaryOperation({ pow($0, 2) }, { "(\($0))²" }),
+        "x⁻¹": Operation.unaryOperation({ pow($0, -1) }, { "(\($0))⁻¹" }),
+        "%": Operation.unaryOperation({ $0/100 }, { "(\($0))%" }),
+        "cos": Operation.unaryOperation(cos, { "cos(\($0))" }),
+        "√": Operation.unaryOperation(sqrt, { "√(\($0))" }),
         "π": Operation.constant(Double.pi),
         "e": Operation.constant(M_E),
-        "÷": Operation.binaryOperation({ $0 / $1 }),
-        "×": Operation.binaryOperation({ $0 * $1 }),
-        "−": Operation.binaryOperation({ $0 - $1 }),
-        "+": Operation.binaryOperation({ $0 + $1 }),
+        "÷": Operation.binaryOperation({ $0 / $1 }, { "\($0) ÷ \($1)" }),
+        "×": Operation.binaryOperation({ $0 * $1 }, { "\($0) × \($1)" }),
+        "−": Operation.binaryOperation({ $0 - $1 }, { "\($0) − \($1)" }),
+        "+": Operation.binaryOperation({ $0 + $1 }, { "\($0) + \($1)" }),
         "=": Operation.equals,
         "AC": Operation.clear
     ]
@@ -62,23 +62,44 @@ struct CalculatorBrain {
         }
     }
     
-    mutating func performOperation(_ symbol: String) {
+    // TEST FOR VALUES LIKE: 
+    // (1 + 1) X 5
+    // AND 
+    // 3 + SQRT(9) = 6
+    mutating func performOperation(_ symbol: String, displayValueWasSetByInput: Bool) {
         if let operation = operations[symbol] {
             switch operation {
             case .constant(let value):
-                accumulator = value
-            case .unaryOperation(let function):
-                if let value = accumulator {
-                    accumulator = function(value)
+                if accumulator != nil && !resultIsPending {
+                    description = ""
                 }
-            case .binaryOperation(let function):
-                if accumulator != nil {
-                    pendingBinaryOperation = PendingBinaryOperation(function: function, firstOperand: accumulator!)
+                description += "\(symbol)"
+                accumulator = value
+                
+            case .unaryOperation(let resultFunction, let descriptionFunction): // ±, ², %, cos...
+                if let value = accumulator {
+                    if displayValueWasSetByInput {
+                        description = "\(value)"
+                    }
+                    description = descriptionFunction(description)
+                    accumulator = resultFunction(value)
+                }
+            case .binaryOperation(let resultFunction, let descriptionFunction):
+                if let value = accumulator {
+                    pendingBinaryOperation = PendingBinaryOperation(function: resultFunction, firstOperand: value)
+                    if displayValueWasSetByInput {
+                        description = "\(value)"
+                    }
+                    description = descriptionFunction(description, "")
                     accumulator = nil
                 }
             case .equals:
+                if let value = accumulator {
+                    description += "\(value)"
+                }
                 performPendingBinaryOperation()
             case .clear:
+                description = ""
                 accumulator = 0
                 pendingBinaryOperation = nil
             }
@@ -92,6 +113,16 @@ struct CalculatorBrain {
         }
     }
     
-    var description: String
+    private var description = ""
+    var descriptionResult: String {
+        get {
+            if resultIsPending {
+                return description + " ..."
+            }
+            else {
+                return (description == "") ? "" : description + " ="
+            }
+        }
+    }
 }
 
