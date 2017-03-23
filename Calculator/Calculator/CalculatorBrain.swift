@@ -56,6 +56,11 @@ struct CalculatorBrain {
     }
     
     private var pendingBinaryOperation: PendingBinaryOperation?
+    private var resultIsPending: Bool {
+        get {
+            return (pendingBinaryOperation != nil)
+        }
+    }
     
     mutating func performOperation(_ symbol: String) {
         if let operation = operations[symbol] {
@@ -74,7 +79,7 @@ struct CalculatorBrain {
             case .equals:
                 performPendingBinaryOperation()
             case .clear:
-                accumulator = nil
+                accumulator = 0
                 pendingBinaryOperation = nil
             }
         }
@@ -86,5 +91,7 @@ struct CalculatorBrain {
             pendingBinaryOperation = nil
         }
     }
+    
+    var description: String
 }
 

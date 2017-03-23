@@ -51,12 +51,21 @@ class ViewController: UIViewController {
         }
         
         if userIsTyping {
+            if digit == "." && floor(displayValue) != displayValue { // checks if dot was touched and current number is already a floating point number
+                return
+            }
+            
             let currentText = resultLabel.text!
             resultLabel.text = currentText + digit
         } else {
-            resultLabel.text = digit
             if digit != "0" {
                 userIsTyping = true
+            }
+            
+            if digit == "." {
+                resultLabel.text = "0."
+            } else {
+                resultLabel.text = digit
             }
         }
     }

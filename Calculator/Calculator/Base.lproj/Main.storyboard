@@ -334,7 +334,6 @@
                                                         </state>
                                                         <connections>
                                                             <action selector="performOperation:" destination="BYZ-38-t0r" eventType="touchUpInside" id="5cg-BP-JCf"/>
-                                                            <action selector="touchedDigit:" destination="BYZ-38-t0r" eventType="touchUpInside" id="def-0l-yWA"/>
                                                         </connections>
                                                     </button>
                                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="XVr-cw-BNe">
@@ -355,6 +354,9 @@
                                                         <state key="normal" title=".">
                                                             <color key="titleColor" white="0.0" alpha="1" colorSpace="calibratedWhite"/>
                                                         </state>
+                                                        <connections>
+                                                            <action selector="touchedDigit:" destination="BYZ-38-t0r" eventType="touchUpInside" id="REn-eT-kDD"/>
+                                                        </connections>
                                                     </button>
                                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="AQg-wM-FMW">
                                                         <rect key="frame" x="276" y="0.0" width="59" height="85.5"/>
