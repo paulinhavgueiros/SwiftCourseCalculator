@@ -10,15 +10,45 @@ import Foundation
 
 struct CalculatorBrain {
     
-    private var accumulator: Double?
-    var result: Double? {
+    private var resultAccumulator = 0.0
+    var result: Double {
         get {
-            return accumulator
+            return resultAccumulator
         }
     }
     
-    mutating func setOperand(_ operand: Double) {
-        accumulator = operand
+    private var descriptionAccumulator = ""
+    var description: String {
+        get {
+            if resultIsPending {
+                let operation = pendingBinaryOperation!
+                let descriptionEnding = operation.descriptionFirstOperand != descriptionAccumulator ? descriptionAccumulator : ""
+                return operation.descriptionFunction(operation.descriptionFirstOperand, descriptionEnding) + " ..."
+            }
+            else {
+                return (descriptionAccumulator == "") ? "" : descriptionAccumulator + " ="
+            }
+        }
+    }
+    
+    private var pendingBinaryOperation: PendingBinaryOperation?
+    private var resultIsPending: Bool {
+        get {
+            return pendingBinaryOperation != nil
+        }
+    }
+    
+    private struct PendingBinaryOperation {
+        let function: (Double, Double) -> Double
+        let firstOperand: Double
+        var descriptionFunction: (String, String) -> String
+        var descriptionFirstOperand: String
+        
+        func perform(withOperand secondOperand: Double, andDescription descriptionSecondOperand: String) -> (Double, String) {
+            let operationResult = function(firstOperand, secondOperand)
+            let descriptionResult = descriptionFunction(descriptionFirstOperand, descriptionSecondOperand)
+            return (operationResult, descriptionResult)
+        }
     }
     
     private enum Operation {
@@ -28,7 +58,7 @@ struct CalculatorBrain {
         case equals
         case clear
     }
-    
+
     private var operations: Dictionary<String,Operation> = [
         "±": Operation.unaryOperation({ -$0 }, { "±(\($0))" }),
         "x²": Operation.unaryOperation({ pow($0, 2) }, { "(\($0))²" }),
@@ -46,82 +76,43 @@ struct CalculatorBrain {
         "AC": Operation.clear
     ]
     
-    private struct PendingBinaryOperation {
-        let function: (Double, Double) -> Double
-        let firstOperand: Double
-        
-        func perform(with secondOperand: Double) -> Double {
-            return function(firstOperand, secondOperand)
-        }
-    }
     
-    private var pendingBinaryOperation: PendingBinaryOperation?
-    private var resultIsPending: Bool {
-        get {
-            return (pendingBinaryOperation != nil)
-        }
+    mutating func setOperand(_ operand: Double) {
+        resultAccumulator = operand
+        descriptionAccumulator = String(format:"%g", operand)
     }
-    
-    // TEST FOR VALUES LIKE: 
-    // (1 + 1) X 5
-    // AND 
-    // 3 + SQRT(9) = 6
-    mutating func performOperation(_ symbol: String, displayValueWasSetByInput: Bool) {
+
+    mutating func performOperation(_ symbol: String) {
         if let operation = operations[symbol] {
             switch operation {
             case .constant(let value):
-                if accumulator != nil && !resultIsPending {
-                    description = ""
-                }
-                description += "\(symbol)"
-                accumulator = value
+                resultAccumulator = value
+                descriptionAccumulator = symbol
+
+            case .unaryOperation(let resultFunction, let descriptionFunction):
+                resultAccumulator = resultFunction(resultAccumulator)
+                descriptionAccumulator = descriptionFunction(descriptionAccumulator)
                 
-            case .unaryOperation(let resultFunction, let descriptionFunction): // ±, ², %, cos...
-                if let value = accumulator {
-                    if displayValueWasSetByInput {
-                        description = "\(value)"
-                    }
-                    description = descriptionFunction(description)
-                    accumulator = resultFunction(value)
-                }
             case .binaryOperation(let resultFunction, let descriptionFunction):
-                if let value = accumulator {
-                    pendingBinaryOperation = PendingBinaryOperation(function: resultFunction, firstOperand: value)
-                    if displayValueWasSetByInput {
-                        description = "\(value)"
-                    }
-                    description = descriptionFunction(description, "")
-                    accumulator = nil
-                }
-            case .equals:
-                if let value = accumulator {
-                    description += "\(value)"
-                }
                 performPendingBinaryOperation()
+
+                pendingBinaryOperation = PendingBinaryOperation(function: resultFunction, firstOperand: resultAccumulator, descriptionFunction:descriptionFunction, descriptionFirstOperand: descriptionAccumulator)
+                
+            case .equals:
+                performPendingBinaryOperation()
+
             case .clear:
-                description = ""
-                accumulator = 0
+                descriptionAccumulator = ""
+                resultAccumulator = 0.0
                 pendingBinaryOperation = nil
             }
         }
     }
     
     private mutating func performPendingBinaryOperation() {
-        if pendingBinaryOperation != nil && accumulator != nil {
-            accumulator = pendingBinaryOperation!.perform(with: accumulator!)
+        if resultIsPending {
+            (resultAccumulator, descriptionAccumulator) = pendingBinaryOperation!.perform(withOperand: resultAccumulator, andDescription: descriptionAccumulator)
             pendingBinaryOperation = nil
-        }
-    }
-    
-    private var description = ""
-    var descriptionResult: String {
-        get {
-            if resultIsPending {
-                return description + " ..."
-            }
-            else {
-                return (description == "") ? "" : description + " ="
-            }
         }
     }
 }
